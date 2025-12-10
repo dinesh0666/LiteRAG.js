@@ -14,7 +14,7 @@ A lightweight, open-source Retrieval-Augmented Generation (RAG) toolkit for Node
 
 LiteRAG.js is a **lightweight RAG (Retrieval-Augmented Generation) framework** that helps you build intelligent search and Q&A systems. Perfect for:
 
-- 🏢 **Internal company knowledge bases** - Search across documentation, wikis, and internal docs
+- 🏢 **Internal knowledge bases** - Search across documentation, wikis, and internal docs
 - 💬 **Chatbot context retrieval** - Give your LLM accurate, relevant context
 - � **Document Q&A systems** - Ask questions about your documents
 - 🔍 **Semantic search** - Find content by meaning, not just keywords
@@ -57,6 +57,50 @@ npm run build
 # 4. Run an example
 npx ts-node examples/basic.ts
 ```
+
+---
+
+## 🤖 LLM Integration (NEW!)
+
+LiteRAG.js now includes **complete LLM integration examples** for full RAG pipelines!
+
+### Local LLM with Ollama (100% Private & Free)
+
+```bash
+# 1. Install Ollama: https://ollama.ai
+# 2. Pull a model
+ollama pull gemma3:4b
+
+# 3. Run the RAG demo
+OLLAMA_MODEL=gemma3:4b npx ts-node examples/rag-with-ollama.ts
+```
+
+**Features:**
+- 🔒 **100% Private** - Everything runs on your machine
+- 💰 **Free** - No API costs
+- 📡 **Offline** - Works without internet
+- ⚡ **Streaming** - Real-time response generation
+
+### Cloud LLMs (OpenAI, Claude, Gemini)
+
+```bash
+# Install OpenAI SDK
+npm install openai
+
+# Set API key
+export OPENAI_API_KEY="your-key"
+
+# Run with OpenAI
+npx ts-node examples/rag-with-llm.ts
+```
+
+**Supported LLMs:**
+- OpenAI (GPT-4, GPT-3.5)
+- Anthropic Claude
+- Google Gemini
+- Ollama (Llama, Mistral, Phi, etc.)
+
+See **[docs/LLM_INTEGRATION.md](docs/LLM_INTEGRATION.md)** for complete guide.
 
 ---
 
@@ -455,6 +499,47 @@ This demonstrates:
 - Vector storage
 - Semantic search
 - Re-ranking results
+
+### Full RAG with Local LLM (Ollama)
+
+**NEW!** Complete RAG pipeline with local LLM:
+
+```bash
+# Make sure Ollama is running with a model
+ollama pull gemma3:4b
+
+# Run the demo
+OLLAMA_MODEL=gemma3:4b npx ts-node examples/rag-with-ollama.ts
+```
+
+Features:
+- 🔒 100% private (runs locally)
+- 💰 Free (no API costs)
+- 📡 Works offline
+- ⚡ Streaming responses
+- 📚 Automatic source citation
+
+### Full RAG with Cloud LLM (OpenAI)
+
+```bash
+# Set your API key
+export OPENAI_API_KEY="your-key"
+
+# Run the demo
+npx ts-node examples/rag-with-llm.ts
+```
+
+Supports: OpenAI, Claude, Gemini
+
+### In-Memory Demo (No Docker)
+
+Quick test without any external dependencies:
+
+```bash
+npx ts-node examples/demo-no-docker.ts
+```
+
+Perfect for testing the framework without setting up vector databases.
 
 ### Performance Benchmarks
 

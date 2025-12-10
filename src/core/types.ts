@@ -58,6 +58,39 @@ export interface VectorStoreConfig {
 }
 
 /**
+ * Metadata filter for vector search
+ * Provides a unified interface that works across all vector stores
+ */
+export interface MetadataFilter {
+    /** Simple equality matching */
+    equals?: Record<string, string | number | boolean>;
+
+    /** Logical AND - all conditions must match */
+    and?: MetadataFilter[];
+
+    /** Logical OR - at least one condition must match */
+    or?: MetadataFilter[];
+
+    /** Logical NOT - condition must not match */
+    not?: MetadataFilter;
+
+    /** Greater than comparison */
+    greaterThan?: Record<string, number>;
+
+    /** Less than comparison */
+    lessThan?: Record<string, number>;
+
+    /** Greater than or equal comparison */
+    greaterThanOrEqual?: Record<string, number>;
+
+    /** Less than or equal comparison */
+    lessThanOrEqual?: Record<string, number>;
+
+    /** Value must be in the provided list */
+    in?: Record<string, (string | number | boolean)[]>;
+}
+
+/**
  * Vector store interface - all vector DB implementations must implement this
  */
 export interface VectorStore {
@@ -73,8 +106,11 @@ export interface VectorStore {
 
     /**
      * Search for similar documents
+     * @param query - Query text or embedding vector
+     * @param k - Number of results to return
+     * @param filter - Optional metadata filter
      */
-    similaritySearch(query: string | number[], k: number): Promise<SearchResult[]>;
+    similaritySearch(query: string | number[], k: number, filter?: MetadataFilter): Promise<SearchResult[]>;
 
     /**
      * Delete documents by IDs

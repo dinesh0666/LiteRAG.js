@@ -110,14 +110,16 @@ export class LiteRAGServer {
         // Query endpoint
         this.app.post('/query', async (req: Request, res: Response) => {
             try {
-                const { query, k = 5, useCache = true } = req.body;
+                const { query, k, rerank, filter, useCache = true } = req.body;
 
                 if (!query) {
                     return res.status(400).json({ error: 'Query is required' });
                 }
 
+                const topK = k || 5;
+
                 // Check cache
-                const cacheKey = `query:${query}:${k}`;
+                const cacheKey = `query:${query}:${topK}:${JSON.stringify(filter || {})}`;
                 if (useCache && this.config.cache) {
                     const cached = await this.config.cache.get(cacheKey);
                     if (cached) {
@@ -129,10 +131,10 @@ export class LiteRAGServer {
                 }
 
                 // Retrieve
-                let results = await this.retriever.retrieve(query, k);
+                let results = await this.retriever.retrieve(query, { topK, filter });
 
                 // Re-rank if configured
-                if (this.config.reranker) {
+                if (rerank && this.config.reranker) {
                     results = await this.config.reranker.rerank(query, results);
                 }
 
@@ -144,7 +146,6 @@ export class LiteRAGServer {
                         metadata: r.document.metadata,
                         score: r.score,
                     })),
-                    context: results.map((r, idx) => `[${idx + 1}] ${r.document.content}`).join('\n\n'),
                 };
 
                 // Cache result
@@ -155,7 +156,7 @@ export class LiteRAGServer {
                 res.json(response);
             } catch (error: any) {
                 console.error('Query error:', error);
-                res.status(500).json({ error: error.message });
+                res.status(500).json({ error: 'Failed to process query' });
             }
         });
 

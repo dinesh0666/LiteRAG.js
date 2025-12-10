@@ -1,6 +1,7 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { v4 as uuidv4 } from 'uuid';
-import { VectorStore, Document, SearchResult, EmbeddingModel } from '../core/types';
+import { VectorStore, Document, SearchResult, EmbeddingModel, MetadataFilter } from '../core/types';
+import { toQdrantFilter } from './filters/qdrant-filter';
 
 /**
  * Qdrant vector store implementation
@@ -40,12 +41,12 @@ export class QdrantVectorStore implements VectorStore {
                         distance: 'Cosine',
                     },
                 });
-                console.log(`Created Qdrant collection: ${this.collectionName}`);
+                console.log(`Created Qdrant collection: ${this.collectionName} `);
             } else {
-                console.log(`Qdrant collection already exists: ${this.collectionName}`);
+                console.log(`Qdrant collection already exists: ${this.collectionName} `);
             }
         } catch (error) {
-            throw new Error(`Failed to initialize Qdrant: ${error}`);
+            throw new Error(`Failed to initialize Qdrant: ${error} `);
         }
     }
 
@@ -75,11 +76,11 @@ export class QdrantVectorStore implements VectorStore {
 
             console.log(`Added ${documents.length} documents to Qdrant`);
         } catch (error) {
-            throw new Error(`Failed to add documents to Qdrant: ${error}`);
+            throw new Error(`Failed to add documents to Qdrant: ${error} `);
         }
     }
 
-    async similaritySearch(query: string | number[], k: number): Promise<SearchResult[]> {
+    async similaritySearch(query: string | number[], k: number, filter?: MetadataFilter): Promise<SearchResult[]> {
         try {
             // Get query embedding
             let queryVector: number[];
@@ -89,12 +90,20 @@ export class QdrantVectorStore implements VectorStore {
                 queryVector = query;
             }
 
-            // Search
-            const searchResult = await this.client.search(this.collectionName, {
+            // Build search params
+            const searchParams: any = {
                 vector: queryVector,
                 limit: k,
                 with_payload: true,
-            });
+            };
+
+            // Add filter if provided
+            if (filter) {
+                searchParams.filter = toQdrantFilter(filter);
+            }
+
+            // Search
+            const searchResult = await this.client.search(this.collectionName, searchParams);
 
             // Convert to SearchResult format
             return searchResult.map((result) => ({
@@ -106,7 +115,7 @@ export class QdrantVectorStore implements VectorStore {
                 score: result.score,
             }));
         } catch (error) {
-            throw new Error(`Failed to search in Qdrant: ${error}`);
+            throw new Error(`Failed to search in Qdrant: ${error} `);
         }
     }
 
@@ -118,7 +127,7 @@ export class QdrantVectorStore implements VectorStore {
             });
             console.log(`Deleted ${ids.length} documents from Qdrant`);
         } catch (error) {
-            throw new Error(`Failed to delete documents from Qdrant: ${error}`);
+            throw new Error(`Failed to delete documents from Qdrant: ${error} `);
         }
     }
 

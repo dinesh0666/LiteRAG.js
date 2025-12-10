@@ -1,6 +1,7 @@
 import { Client } from '@opensearch-project/opensearch';
 import { v4 as uuidv4 } from 'uuid';
-import { VectorStore, Document, SearchResult, EmbeddingModel } from '../core/types';
+import { VectorStore, Document, SearchResult, EmbeddingModel, MetadataFilter } from '../core/types';
+import { toOpenSearchFilter } from './filters/opensearch-filter';
 
 /**
  * OpenSearch vector store implementation
@@ -64,12 +65,12 @@ export class OpenSearchVectorStore implements VectorStore {
                         },
                     },
                 });
-                console.log(`Created OpenSearch index: ${this.indexName}`);
+                console.log(`Created OpenSearch index: ${this.indexName} `);
             } else {
-                console.log(`OpenSearch index already exists: ${this.indexName}`);
+                console.log(`OpenSearch index already exists: ${this.indexName} `);
             }
         } catch (error) {
-            throw new Error(`Failed to initialize OpenSearch: ${error}`);
+            throw new Error(`Failed to initialize OpenSearch: ${error} `);
         }
     }
 
@@ -105,11 +106,11 @@ export class OpenSearchVectorStore implements VectorStore {
 
             console.log(`Added ${documents.length} documents to OpenSearch`);
         } catch (error) {
-            throw new Error(`Failed to add documents to OpenSearch: ${error}`);
+            throw new Error(`Failed to add documents to OpenSearch: ${error} `);
         }
     }
 
-    async similaritySearch(query: string | number[], k: number): Promise<SearchResult[]> {
+    async similaritySearch(query: string | number[], k: number, filter?: MetadataFilter): Promise<SearchResult[]> {
         try {
             // Get query embedding
             let queryVector: number[];
@@ -119,19 +120,45 @@ export class OpenSearchVectorStore implements VectorStore {
                 queryVector = query;
             }
 
+            // Build query
+            let searchQuery: any;
+
+            if (filter) {
+                // Combine KNN with filter using bool query
+                const filterQuery = toOpenSearchFilter(filter);
+                searchQuery = {
+                    bool: {
+                        must: [
+                            {
+                                knn: {
+                                    embedding: {
+                                        vector: queryVector,
+                                        k: k * 2, // Fetch more candidates for filtering
+                                    },
+                                },
+                            },
+                            filterQuery,
+                        ],
+                    },
+                };
+            } else {
+                // Just KNN search
+                searchQuery = {
+                    knn: {
+                        embedding: {
+                            vector: queryVector,
+                            k: k,
+                        },
+                    },
+                };
+            }
+
             // KNN search
             const response = await this.client.search({
                 index: this.indexName,
                 body: {
                     size: k,
-                    query: {
-                        knn: {
-                            embedding: {
-                                vector: queryVector,
-                                k: k,
-                            },
-                        },
-                    },
+                    query: searchQuery,
                 },
             });
 
@@ -145,7 +172,7 @@ export class OpenSearchVectorStore implements VectorStore {
                 score: hit._score,
             }));
         } catch (error) {
-            throw new Error(`Failed to search in OpenSearch: ${error}`);
+            throw new Error(`Failed to search in OpenSearch: ${error} `);
         }
     }
 
@@ -156,7 +183,7 @@ export class OpenSearchVectorStore implements VectorStore {
             await this.client.bulk({ refresh: true, body });
             console.log(`Deleted ${ids.length} documents from OpenSearch`);
         } catch (error) {
-            throw new Error(`Failed to delete documents from OpenSearch: ${error}`);
+            throw new Error(`Failed to delete documents from OpenSearch: ${error} `);
         }
     }
 
